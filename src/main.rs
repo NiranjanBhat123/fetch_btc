@@ -1,7 +1,12 @@
 use std::fs::File;
+use tokio::task::spawn_blocking;
 use std::io::{self, Write};
 use reqwest::blocking::Client;
 use serde_json::Value;
+use tokio::task;
+use tokio::spawn;
+use futures_util::stream::StreamExt;
+use tokio_tungstenite::tungstenite::protocol::Message;
 
 
 
@@ -33,16 +38,20 @@ async fn cache_mode(times: usize) {
     let mut prices = Vec::new();
 
     for _ in 0..times {
-        let response = Client::new().get(url).send().unwrap();
-        let body = response.text().unwrap();
-        let json: Value = serde_json::from_str(&body).unwrap();
-        
+        let response = reqwest::get(url).await.expect("Failed to send HTTP request");
+        let body = response.text().await.expect("Failed to read response body");
+        let json: Value = serde_json::from_str(&body).expect("Error parsing JSON");
+
         if let Some(data) = json.get("data") {
-            if let (Some(amount), Some(base), Some(currency)) = (data.get("amount"), data.get("base"), data.get("currency")) {
+            if let (Some(amount), Some(base), Some(currency)) =
+                (data.get("amount"), data.get("base"), data.get("currency"))
+            {
                 let price: f64 = amount.as_str().unwrap().parse().unwrap();
-                println!("price is :price ={}",price);
+                println!(
+                    "Received data: Amount={}, Base={}, Currency={}",
+                    amount, base, currency
+                );
                 prices.push(price);
-                println!("Received data: Amount={}, Base={}, Currency={}", amount, base, currency);
             } else {
                 eprintln!("Incomplete data in JSON response");
             }
@@ -55,10 +64,13 @@ async fn cache_mode(times: usize) {
 
     println!("Cache complete. The average USD price of BTC is: {}", average_price);
 
-   
-    let _ =tokio::task::spawn_blocking(move || {
-        save_to_file("cache_results.txt", &format!("Average Price: {}\nData Points: {:?}", average_price, prices))
-    }).await.unwrap();
+    // Save result and data points to a file
+    save_to_file(
+        "cache_results.txt",
+        &format!("Average Price: {}\nData Points: {:?}", average_price, prices),
+    )
+    .await
+    .expect("Failed to save to file");
 }
 
 
@@ -86,7 +98,7 @@ async fn read_mode() {
     println!("Read complete. The average USD price of BTC is: {}", average_price);
 
    
-    save_to_file(
+    save_this_to_file(
         "read_results.txt",
         &format!("Average Price: {}\nData Points: {:?}", average_price, prices),
     )
@@ -94,7 +106,13 @@ async fn read_mode() {
 }
 
 
-fn save_to_file(filename: &str, content: &str) -> io::Result<()> {
+async fn save_to_file(filename: &str, content: &str) -> io::Result<()> {
+    let mut file = File::create(filename)?;
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+fn save_this_to_file(filename: &str, content: &str) -> io::Result<()> {
     let mut file = File::create(filename)?;
     file.write_all(content.as_bytes())?;
     Ok(())
