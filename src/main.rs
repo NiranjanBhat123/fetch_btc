@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::fs;
-use std::io::{self, Write};
 use serde_json::Value;
+use std::fs;
+use std::fs::File;
+use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() {
@@ -76,43 +76,11 @@ async fn cache_mode(times: usize) {
 }
 
 async fn read_mode() {
-    // let url = "https://api.coinbase.com/v2/prices/spot?currency=USD";
-    // let mut prices = Vec::new();
-    // for _ in 0..30 {
-    //     let response = reqwest::get(url)
-    //         .await
-    //         .expect("Failed to make HTTP request");
-    //     let body = response.text().await.expect("Failed to read response body");
-
-    //     let price: f64 = serde_json::from_str::<Value>(&body)
-    //         .unwrap()
-    //         .get("data")
-    //         .and_then(|data| data.get("amount"))
-    //         .and_then(|amount| amount.as_str())
-    //         .and_then(|amount_str| amount_str.parse::<f64>().ok())
-    //         .unwrap_or_default();
-
-    //     prices.push(price);
-    // }
-
-    // let average_price: f64 = prices.iter().sum::<f64>() / prices.len() as f64;
-
-    // println!(
-    //     "Read complete. The average USD price of BTC is: {}",
-    //     average_price
-    // );
-
-    // save_this_to_file(
-    //     "read_results.txt",
-    //     &format!(
-    //         "Average Price: {}\nData Points: {:?}",
-    //         average_price, prices
-    //     ),
-    // )
-    // .unwrap();
     if let Ok(contents) = fs::read_to_string("cache_results.txt") {
-        // Print the contents to the terminal
-        println!("Read complete. Contents of cache_results.txt:\n{}", contents);
+        println!(
+            "Read complete. Contents of cache_results.txt:\n{}",
+            contents
+        );
     } else {
         eprintln!("Failed to read from file or file not found.");
     }
@@ -123,5 +91,3 @@ async fn save_to_file(filename: &str, content: &str) -> io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
-
-
