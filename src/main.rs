@@ -9,15 +9,17 @@ use serde_json::Value;
 
 #[tokio::main]
 async fn main() {
-    println!("select any command [- cargo run -- --mode=read ] or [cargo run -- --mode = cache --times=10] ");
+    println!("select any command [- cargo run -- --mode=read ] or [cargo run -- --mode = cache --times= 10] ");
     let args: Vec<String> = std::env::args().collect();
     println!("Command-line arguments: {:?}", args);
     let mode = &args[1];
     match mode.as_str() {
         "--mode=cache" => {
             println!("selected cache mode !");
-            println!("args is :{:?}",args);
-            cache_mode(10).await;
+            
+            let times = args[3].parse::<usize>().expect("Invalid times argument");
+            println!("Cache mode will run {} times", times);
+            cache_mode(times).await;
         }
         "--mode=read" => {
             println!("selected read mode !");
